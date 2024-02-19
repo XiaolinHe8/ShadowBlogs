@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.w3.org/1999/xhtml">
+<head th:replace="admin/_fragments :: head(~{::title})">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>shadow的个人博客-图片管理</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/semantic-ui/2.2.4/semantic.min.css">
+    <link rel="stylesheet" href="../../static/lib/editormd/css/editormd.min.css"
+          th:href="@{/lib/editormd/css/editormd.min.css}">
+    <link rel="stylesheet" href="../../static/css/me.css" th:href="@{/css/me.css}">
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.2/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/semantic-ui/2.2.4/semantic.min.js"></script>
+</head>
+<body>
+
+<!--导航-->
+<nav th:replace="admin/_fragments :: menu(4)">
+</nav>
+<!--中间内容-->
+<div class=" m-container-large m-padded-tb-big " style="min-height: 500px !important;">
+    <div  class="ui m-container-large segment m-shadow-small-noImg ">
+        <div  >
+            <h3>图片上传</h3>
+            <div class="ui four column grid">
+                <div class="column">
+                    <div class="ui labeled input">
+                        <div class="ui label">
+                            名称
+                        </div>
+                        <input type="text" id="name" placeholder="图片名称" name="name">
+                    </div>
+                </div>
+                <div class="column">
+                    <div class="ui labeled input">
+                        <div class="ui label">
+                            描述
+                        </div>
+                        <input type="text" id="description" placeholder="图片描述" name="description">
+                    </div>
+                </div>
+                <div class="column">
+                    <div class="ui left labeled action input">
+                        <label class="ui compact teal basic label">标签</label>
+                        <div class="ui fluid selection dropdown">
+                            <input type="hidden" id="tagId" name="tagId" th:value="*{tag}!=null ? *{tag.id}">
+                            <i class="dropdown icon"></i>
+                            <div class="default text" style="width: 120px">请选择标签......</div>
+                            <div class="menu">
+                                <div th:each="tag : ${allTags}" class="item" data-value="1" th:data-value="${tag.id}" th:text="${tag.name}"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="column">
+                    <label class="ui teal button" for="images">选择文件</label>
+                    <input type="file" id="images" onchange="show(this)" style="display: none;" multiple="multiple"
+                           accept="image/png,image/gif,image/jpeg"/>
+                    <button onclick="myDelete()" class="ui button primary">清除</button>
+                </div>
+            </div>
+            <div>
+                <div class="ui link cards" id="picShow">
+                </div>
+            </div>
+        </div>
+        <br/>
+        <br/>
+        <hr/>
+        <div class="m-margin-top-large" th:if="${#arrays.length(tags)}">
+            <h3>图片浏览</h3>
+            <div class="ui attached segment m-padded-tb-large m-shadow-small m-margin-bottom-small" >
+                <a href="#" th:href="@{/admin/img/tags/{id}(id=${tag.id})}"  class="ui basic left pointing large label m-margin-tb-tiny" th:classappend="${tag.id==activeTagId} ? 'teal'" th:each="tag : ${tags}">
+                    <span th:text="${tag.name}"></span> <div class="detail" th:text="${tag.number}"></div>
+                </a>
+            </div>
+            <div class="m-margin-top " >
+                <div>
+                    <div class="ui link cards">
+                        <div class="card" th:each="img : ${imgs.data.records}">
+                            <div class="image">
+                                <img th:src="@{${img.virtualImg}}" src="../../static/images/admin.jpeg">
+                            </div>
+                            <div class="content">
+                                <div class="header" th:text="${img.name}">Elyse</div>
+                                <div class="description">
+                                    <p  th:text="${img.description}"> </p>
+                                    <a th:href="${img.virtualImg}" > 图片链接 </a>
+                                </div>
+                            </div>
+                            <div class="extra content">
+                                <a class="right floated ui teal button" th:href="@{/admin/img/{id}/delete(id=${img.id})}">
+                                    删除
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="m-margin-top " th:if="${imgs.data.pages}>1">
+                    <div class="ui middle aligned two column grid">
+                        <div class="column">
+                            <a  th:href="@{/admin/img/tags/{id}(id=${activeTagId})(current=${imgs.data.current}-1)}"  th:unless="${imgs.data.current==1}" class="ui mini teal basic button">上一页</a>
+                        </div>
+                        <div class="right aligned column">
+                            <a th:href="@{/admin/img/tags/{id}(id=${activeTagId})(current=${imgs.data.current}+1)}"  th:unless="${imgs.data.pages==imgs.data.current}" class="ui mini teal basic button">下一页</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+
+        </div>
+
+    </div>
+
+
+
+
+</div>
+
+<br>
+<br>
+<!--底部footer-->
+<footer th:replace="admin/_fragments :: footer">
+</footer>
+<th:block th:replace="admin/_fragments :: script">
+</th:block>
+
+<script>
+    $('.menu.toggle').click(function () {
+        $('.m-item').toggleClass('m-mobile-hide');
+    });
+
+    $('.ui.dropdown').dropdown({
+        on: 'hover'
+    });
+    function show(f) {
+        var rd = new FileReader();
+        var files = f.files[0];
+        rd.readAsDataURL(files);
+        rd.onloadend = function(e) {
+            var name = document.getElementById("name").value
+            if(name == undefined || name == "" ||name == null){
+                alert("图片名称不能为空");
+                return
+            }
+            var description = document.getElementById("description").value
+            if(description == undefined || description == "" ||description == null){
+                alert("图片描述不能为空");
+                return
+            }
+            var tagName = document.getElementById("tagId").value
+            if(tagName == undefined || tagName == "" ||tagName == null){
+                alert("图片标签不能为空");
+                return
+            }
+            var src = this.result;
+            var formData = new FormData();
+            formData.append("name",name);
+            formData.append("tagId",tagName);
+            formData.append("description",description);
+            formData.append("files",files);
+            $.ajax({
+                url: '/admin/uploadImg',
+                method: 'post',
+                data: formData,
+                dataType: 'json',
+                processData: false,//数据处理
+                contentType: false,//内容类型
+                cache: false,
+                async: true,
+                success: function (data) {
+                    document.getElementById("picShow").innerHTML+="<div class=\"card\">\n" +
+                        "                        <div class=\"image\">\n" +
+                        "                            <img src=\""+data.virtualImg+"\">\n" +
+                        "                        </div>\n" +
+                        "                        <div class=\"content\">\n" +
+                        "                            <div class=\"header\">"+data.name+"</div>\n" +
+                        " <div class=\"meta\">\n" +
+                        "        <a>"+data.tagId+"</a>\n" +
+                        "      </div>"+
+                        "                            <div class=\"description\">\n" +
+                        "                                <p>"+data.description+"</p>\n" +
+                        "                                <a href=\""+data.virtualImg + "\">"+"图片链接"+"</a>\n" +
+                        "                            </div>\n" +
+                        "                        </div>\n" +
+                        "                    </div>";
+                },
+                error: function (err) {
+                }
+        })
+
+
+        }
+    }
+    function myDelete() {
+        document.getElementById("picShow").innerHTML="";
+    }
+</script>
+</body>
+</html>
